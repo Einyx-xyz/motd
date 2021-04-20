@@ -1,140 +1,122 @@
-surface.CreateFont( "MyFont", {
-	font = "Roboto",
-	size = 24,
-	weight = 1000,
-})
+surface.CreateFont( "TextFont", { font = "Roboto", size = 21, weight = 1000, })
+surface.CreateFont( "ButtonFont", { font = "Roboto", size = 16, weight = 1000, })
 
 AuthT = AuthT or {}
 AuthT.IDs = AuthT.IDs or {}
 
-	function Add()
-		local newID = steamworks.GetPlayerName(LocalPlayer():SteamID64())
-		local output = LocalPlayer():SteamID()
-		AuthT.IDs[newID] = output
-	end
+function Add()
+	local newID = steamworks.GetPlayerName(LocalPlayer():SteamID64())
+	local output = LocalPlayer():SteamID()
+	AuthT.IDs[newID] = output
+end
 
 local FrameColor = Color( 47, 54, 64 )
 local ButtonColor = Color( 80,80,80 )
 
 local saveDir = "EinyxMOTD"
 
-	function MOTD()
-		local scrw, scrh = ScrW(), ScrH()
-		local FrameW, FrameH, AnimTime, AnimDelay, AnimEase = scrw * 0.8, scrh * 0.8, 1.8, 0, 0.1
+function MOTD()
+	local scrw, scrh = ScrW(), ScrH()
+	local FrameW, FrameH, AnimTime, AnimDelay, AnimEase = scrw * 0.7, scrh * 0.7, 1.8, 0, 0.1
 
-		if IsValid(Frame) then
-			Frame:Remove()
-		end
-		Frame = vgui.Create("DFrame")
-		Frame:SetTitle("Einyx -- MOTD")
-		Frame:MakePopup(true)
-		Frame:SetSize(0,0)
-		Frame:SetDraggable(false)
-		Frame:ShowCloseButton(false)
-		local isAnimating = true
-		Frame:SizeTo(FrameW, FrameH, AnimTime, AnimDelay, AnimEase, function()
-			isAnimating = false
-		end)
+	if IsValid(Frame) then
+		Frame:Remove()
+	end
+	Frame = vgui.Create("DFrame")
+	Frame:SetTitle("")
+	Frame:MakePopup(true)
+	Frame:SetSize(0,0)
+	Frame:ShowCloseButton(false)
+	local isAnimating = true
+	Frame:SizeTo(FrameW, FrameH, AnimTime, AnimDelay, AnimEase, function()
+		isAnimating = false
+	end)
 	Frame.Paint = function(self,w,h)
-			self.StartTime = SysTime()
-			Derma_DrawBackgroundBlur(self, self.startTime)
-			draw.RoundedBox( 10, 0, 0, w, h, Color( 15, 15, 15, 235 ) )
+		surface.SetDrawColor(25,25,25,255)
+		surface.DrawRect(0,0,w,h)
+
+		surface.SetDrawColor(15,15,15,255)
+		surface.DrawRect(0,0,w,h*0.04)
+	end
+
+	CButton = vgui.Create("DButton", Frame)
+	CButton:SetPos(scrw * 0.675, 0)
+	CButton:SetFont("ButtonFont")
+	CButton:SetVisible(false)
+	CButton:SetText("Close")
+	CButton.Paint = function(self, w, h)
+		surface.SetDrawColor(15,15,15)
+		surface.DrawRect(0,0,w,h)
+	end
+	CButton.DoClick = function()
+		Frame:Close()
+	end
+
+	HTML = Frame:Add("DHTML")
+	HTML:Dock(FILL)
+	HTML:DockMargin(5,5,5,5)   
+	HTML:SetScrollbars(false)
+	HTML:OpenURL("http://furbloke.com/nn/motd.html")
+
+	Text = Frame:Add("DTextEntry")
+	Text:Dock(BOTTOM)
+	Text:DockMargin(450,0,450,5)
+	Text:SetSize(200, 25)
+	Text:SetFont("TextFont")
+	Text:SetText("Read the Rules and type the Password you find in here!")
+	Text:SelectAllOnFocus()
+	Text.Paint = function(self, w, h)
+		surface.SetDrawColor(35,35,35)
+		surface.DrawRect(0,0,w,h)
+		self:DrawTextEntryText(Color(255,255,255,255), Color(0,0,0,255), Color(255,255,255,255))
+	end
+
+	Text.OnEnter = function(self)
+		if file.Exists(saveDir .. "/motddata.txt", "DATA") ~= true then
+			file.CreateDir(saveDir)
+			file.Write(saveDir .. "/motddata.txt", util.TableToJSON(AuthT.IDs, true))
 		end
 
-		ULButton = Frame:Add( "DButton" )
-		ULButton:SetSize(5, 5)
-		ULButton:Dock(BOTTOM)
-		ULButton:SetVisible(false)
-		ULButton:DockMargin( 550, -10, 550, 0 )
-		ULButton:SetText( "" )
-		local speed = 2
-		local rainbowColor
-		local barStatus = 0
-		ULButton.Paint = function( self, w, h )
-			if self:IsHovered() then
-				barStatus = math.Clamp( barStatus + speed * FrameTime(), 0, 1 )
-			else
-				barStatus = math.Clamp( barStatus - speed * FrameTime(), 0, 1 )
-			end
-			surface.SetDrawColor(ButtonColor)
-			rainbowColor = HSVToColor((CurTime() * speed * 10 ) % 360,1,1)
-			surface.DrawRect(0,0,w,h)
-			surface.SetDrawColor(rainbowColor)
-			surface.DrawRect( 0, h * .9, w * barStatus, h * .1 )
-			draw.SimpleText( "Exit", "MyFont", w * .5, h * .5, color_white, TEXT_ALIGN_CENTER, TEXT_ALIGN_CENTER )
-		end
+		local phrase = "bruh"
+		if Text:GetValue() == phrase then
+			Add()
+			file.Write(saveDir .. "/motddata.txt", util.TableToJSON(AuthT.IDs, true))
 
-		ULButton.DoClick = function()
-			Frame:Close()
-		end
+			local FileCheckJSON = file.Read(saveDir .. "/motddata.txt")
+			local FileCheckTable = util.JSONToTable(FileCheckJSON)
 
-		HTML = Frame:Add("DHTML")
-		HTML:Dock(FILL)
-		HTML:DockMargin(15,-10,15,15)
-		HTML:OpenURL("https://docs.google.com/document/d/1oJbT3_6PMBYAeKusZozow1H922zWK2WRdIbWLSp08F0/edit?usp=sharing")
-
-		Text = Frame:Add("DTextEntry")
-		Text:Dock(BOTTOM)
-		Text:DockMargin(450,0,450,10)
-		Text:SetSize(200, 25)
-		Text:SetFont("MyFont")
-		Text:SelectAllOnFocus()
-		Text.Paint = function(self, w, h)
-			surface.SetDrawColor(80,80,80)
-			surface.DrawRect(0,0,w,h)
-			self:DrawTextEntryText(Color(255,255,255,255), Color(0,0,0,255), Color(255,255,255,255))
-		end
-
-		Text.OnEnter = function(self)
-			if file.Exists(saveDir .. "/motddata.txt", "DATA") ~= true then
-				file.CreateDir(saveDir)
-				file.Write(saveDir .. "/motddata.txt", util.TableToJSON(AuthT.IDs, true))
-			end
-
-			local phrase = "bruh"
-			if Text:GetValue() == phrase then
-				Add()
-				file.Write(saveDir .. "/motddata.txt", util.TableToJSON(AuthT.IDs, true))
-
-				local FileCheckJSON = file.Read(saveDir .. "/motddata.txt")
-				local FileCheckTable = util.JSONToTable(FileCheckJSON)
-
-				if table.HasValue(FileCheckTable, LocalPlayer():SteamID()) then
-					ULButton:SetVisible(true)
-					HTML:DockMargin(15,0,15,15)
-					Text:SetVisible(false)
-				elseif table.HasValue(FileCheckTable, nil) then
-					ULButton:SetVisible(false)
-					HTML:DockMargin(15,-5,15,15)
+			if table.HasValue(FileCheckTable, LocalPlayer():SteamID()) then --HTML:DockMargin(marginLeft, marginTop, marginRight, marginBottom)
+				Text:SetVisible(false)
+				CButton:SetVisible(true)
+				elseif table.HasValue(FileCheckTable, nil) then  
 					Text:SetVisible(true)
+					CButton:SetVisible(false)
 				end
 			end
 		end
 
-		pcall(function() Check() end)
+	pcall(function() Check() end)
 
-		Frame.OnSizeChanged = function(self, w, h)
-			if isAnimating then
-				self:Center()
-			end
-			ULButton:SetTall(h * .05)
-			Text:SetTall(h * .03)
+	Frame.OnSizeChanged = function(self, w, h)
+		if isAnimating then
+			self:Center()
 		end
+		Text:SetTall(h * .03)
+		CButton:SetSize(w * .04, h * .04)
 	end
+end
 
-	function Check()
-		local CheckJSON = file.Read(saveDir .. "/motddata.txt")
-		local CheckTable = util.JSONToTable(CheckJSON)
+function Check()
+	local CheckJSON = file.Read(saveDir .. "/motddata.txt")
+	local CheckTable = util.JSONToTable(CheckJSON)
 
-		if table.HasValue(CheckTable, LocalPlayer():SteamID()) then
-			ULButton:SetVisible(true)
-			HTML:DockMargin(15,0,15,15)
-			Text:SetVisible(false)
-		elseif table.HasValue(CheckTable, nil) then
-			ULButton:SetVisible(false)
-			HTML:DockMargin(15,-5,15,15)
-			Text:SetVisible(true)
-		end
+	if table.HasValue(CheckTable, LocalPlayer():SteamID()) then 
+		Text:SetVisible(false)
+		CButton:SetVisible(true)
+	elseif table.HasValue(CheckTable, nil) then
+		Text:SetVisible(true)
+		CButton:SetVisible(false)
 	end
+end
 
-	concommand.Add("motd", MOTD)
+concommand.Add("motd", MOTD)
